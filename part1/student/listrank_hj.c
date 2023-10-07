@@ -5,25 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* void sublist_rank(long sublist_index, long* next, long* rank, size_t n)
-{
-	
-	for (size_t i = 0; i < n; i++)
-	{
-		//find the next node
-		size_t next_index = next[index];
-		if (next_index != -1)
-		{
-
-		} else
-		{
-			break;
-		}
-		
-		rank[next_index] = rank[index] + 1;
-		index = next_index;
-	}
-} */
 
 void parallelListRanks (long head, const long* next, long* rank, size_t n)
 {
@@ -38,16 +19,14 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 	long *next1 = malloc(n*sizeof(long));
 	long *rank1 = malloc(n*sizeof(long));
 
-	#pragma omp parallel shared( num_sublists, sublist_heads, head, next, next1, rank1, num_threads) private(i)
+	#pragma omp parallel shared( num_sublists, sublist_heads, head, next, next1, rank1, num_threads)
 	{
 		
 
 		#pragma omp single
 		{
 			num_threads = omp_get_num_threads();
-			//printf("num_threads: %ld\n", num_threads);
 			num_sublists = num_threads*ceil(log2(n));
-			//printf("num_sublists: %ld\n", num_sublists);
 			sublist_heads = malloc((num_sublists)*sizeof(long));
 			sublist_scratch = malloc((num_sublists)*sizeof(long));
 			sublist_next = malloc((num_sublists)*sizeof(long));
@@ -56,37 +35,18 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			memset(sublist_scratch,0,sizeof(long)*num_sublists);
 			memset(sublist_next,-1,sizeof(long)*num_sublists);
 			memset(sublist_rank,0,sizeof(long)*num_sublists);
-			//printf("head: %ld\n", head);
 		}
 
 		#pragma omp for
-		for (i = 0; i < n; i++){
+		for (i = 0; i < n; i++)
+		{
 			next1[i] = next[i];
 			if (next1[i] == -1)
 			{
 				next1[i] = -(num_sublists);
 			}
-			
 			rank1[i] = 1;
 		}
-
-		/* #pragma omp single
-		{
-			printf("rank1: ");
-			for (size_t i = 0; i < n; i++) {
-				printf("%ld ", rank1[i]);
-			}
-			printf("\n");
-			printf("next1: ");
-			for (size_t i = 0; i < n; i++) {
-				printf("%ld ", next1[i]);
-			}
-			printf("\n");
-		} */
-
-
-		
-	
 
 		size_t threadID = omp_get_thread_num();
 		size_t sublistsPerThread = (num_sublists)/num_threads;
@@ -103,20 +63,15 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		{
 			startSegment += extraSublists;
 			endSegment += extraSublists;
-		}
-
-		//printf("ThreadID: %ld, startSegment: %ld, endSegment: %ld\n", threadID, startSegment, endSegment);
-		
+		}		
 		
 		for (size_t j = startSegment; j <= endSegment; j++)
 		{
-			//printf("ThreadID: %ld, j: %ld\n", threadID, j);
 			if( j != 0)
 			{
 				size_t startIndex = (j-1)*n/(num_sublists-1);
 				size_t endIndex = j*n/(num_sublists-1) - 1;
 				size_t randIndex = startIndex + rand()%(endIndex - startIndex + 1);
-				//printf("ThreadID: %ld, startIndex: %ld, endIndex: %ld, randIndex: %ld\n", threadID, startIndex, endIndex, randIndex);
 				if (randIndex == head)
 				{
 					randIndex = endIndex;
@@ -128,7 +83,6 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 				sublist_heads[j] = randIndex;
 				sublist_scratch[j] = next1[randIndex];
 				next1[randIndex] = (-1)*j;
-				//printf("next1[%ld] = %ld\n", randIndex, next1[randIndex]);
 			} else
 			{
 				sublist_heads[j] = head;
@@ -138,34 +92,10 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		}
 		#pragma omp barrier
 
-		/* #pragma omp single
-		{
-			printf("sublist head: 	 ");
-			for (size_t i = 0; i < num_sublists; i++) {
-				printf("%ld ", sublist_heads[i]);
-			}
-			printf("\n");
-			
-			printf("sublist scratch: ");
-			for (size_t i = 0; i < num_sublists; i++) {
-				printf("%ld ", sublist_scratch[i]);
-			}
-			printf("\n");
-
-			printf("next: ");
-			for (size_t i = 0; i < n; i++) {
-				printf("%ld ", next1[i]);
-			}
-			printf("\n");
-		} */
-
 		for (size_t j = startSegment; j <= endSegment; j++)
 		{
-			//Traverse the sublist and compute the list ranking of each node within the sublist
 			size_t pre = sublist_heads[j];
 			size_t current = sublist_scratch[j];
-			//printf("ThreadID: %ld, pre: %ld, current: %ld\n", threadID, pre, current);
-			//printf("next1[%ld] = %ld\n", current, next1[current]);
 			
 			while (next1[current] >= 0)
 			{
@@ -178,9 +108,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			if (next1[current] != -(num_sublists))
 			{
 				size_t k = -1*next1[current];
-				//printf("next1[%ld] = %ld\n", current, next1[current]);
 				sublist_next[j] = k;
-				//printf("k: %ld\n", k);
 				sublist_rank[k] = rank1[pre];
 			} else
 			{
@@ -190,29 +118,6 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			
 		}
 		#pragma omp barrier
-
-		
-
-		/* #pragma omp single
-		{
-			printf("rank1: ");
-			for (size_t i = 0; i < n; i++) {
-				printf("%ld ", rank1[i]);
-			}
-			printf("\n");
-
-			printf("sublist rank: ");
-			for (size_t i = 0; i < num_sublists; i++) {
-				printf("%ld ", sublist_rank[i]);
-			}
-
-			printf("\n");
-
-			printf("sublist next: ");
-			for (size_t i = 0; i < num_sublists; i++) {
-				printf("%ld ", sublist_next[i]);
-			}
-		} */
 
 
 		#pragma omp single
@@ -225,15 +130,6 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 				sublist_rank[sublist_next[current]] = sublist_rank[current] + sublist_rank[sublist_next[current]];
 				current = sublist_next[current];
 			}
-
-			/* printf("\n");
-
-			printf("sublist rank: ");
-			for (size_t i = 0; i < num_sublists; i++) {
-				printf("%ld ", sublist_rank[i]);
-			}
-
-			printf("\n"); */
 
 		}
 		
@@ -252,28 +148,13 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			endIndex += extraRecords;
 		}
 
-		//printf("ThreadID: %ld, startIndex: %ld, endIndex: %ld\n", threadID, startIndex, endIndex);
-
+		#pragma omp for
 		for (size_t j = startIndex; j <= endIndex; j++)
 		{
 			rank1[j] = rank1[j]+sublist_rank[(-1)*next1[j]] - 1;
-		}
-		#pragma omp barrier
-		/* #pragma omp single
-		{
-			printf("rank1: ");
-			for (size_t i = 0; i < n; i++) {
-				printf("%ld ", rank1[i]);
-			}
-			printf("\n");
-		} */
-
-
-		for (size_t j = startIndex; j <= endIndex; j++)
-		{
 			rank[j] = rank1[j];
 		}
-		#pragma omp barrier
+
 	}
 	free(sublist_heads);
 	free(sublist_scratch);
