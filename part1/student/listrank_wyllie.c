@@ -26,11 +26,11 @@ void updateRanks(long* rank_in, long* rank_out, const long* next, size_t n)
 		}	
 	}
 
-	printf("rank_out: ");
+	/* printf("rank_out: ");
 	for (size_t i = 0; i < n; i++) {
 		printf("%ld ", rank_out[i]);
 	}
-	printf("\n");
+	printf("\n"); */
 }
 
 void jumpList(long* next_in, long* next_out, size_t n)
@@ -91,28 +91,31 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 	// Initialize next1 and next2 to value of next using parallel for loop
 	size_t i;
 
-	printf("next: ");
-	for (size_t i = 0; i < n; i++) {
+	//printf("next: ");
+	/* for (size_t i = 0; i < n; i++) {
 		printf("%ld ", next[i]);
-	}
-	printf("\n");
+	} */
+	//printf("\n");
 
-	printf("Head: %ld\n", head);
+	//printf("Head: %ld\n", head);
 
 	#pragma omp parallel shared(next1, next2, rank1, rank2, next, n)
 	{
 		#pragma omp for
 		for (i = 0; i < n; i++) {
 		rank1[i] = 1;
-		rank2[i] = 1;
+		//rank2[i] = 1;
 		next1[i] = next[i];
-		next2[i] = next[i];
+		//next2[i] = next[i];
 		}
 
 		#pragma omp single
 		{
 
 			// Perform jump loop of ceiling Log2(n) iterations
+			/* updateRanks(rank1, rank2, next, n);
+			jumpList(next, next1, n); */
+
 			int log2n = ceil(log2(n));
 			for (i = 1; i <= log2n; i++)
 			{
