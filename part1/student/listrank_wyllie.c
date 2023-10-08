@@ -14,9 +14,9 @@ void updateRanks(long* rank_in, long* rank_out, const long* next, size_t n)
 	printf("\n"); */
 
 	// Update the rank_out array using the rank_in array and next array using parallel for loop
-	size_t i;
-	#pragma omp parallel for shared(rank_in, rank_out, next, n)
-	for (i = 0; i < n; i++) {
+	
+	#pragma omp parallel for schedule(static)
+	for (size_t i = 0; i < n; i++) {
 		if (next[i] != NIL)
 		{
 			rank_out[i] = rank_in[i] + rank_in[next[i]];
@@ -46,9 +46,9 @@ void jumpList(long* next_in, long* next_out, size_t n)
 
 	
 
-	size_t i;
-	#pragma omp parallel for shared(next_in, next_out, n)
-	for (i = 0; i < n; i++) {
+	
+	#pragma omp parallel for schedule(static)
+	for (size_t i = 0; i < n; i++) {
 		if (next_in[i] != NIL)
 		{
 			next_out[i] = next_in[next_in[i]];
@@ -89,7 +89,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 
 	// Initialize rank1 and rank2 to value 1 using parallel for loop
 	// Initialize next1 and next2 to value of next using parallel for loop
-	size_t i;
+	
 
 	//printf("next: ");
 	/* for (size_t i = 0; i < n; i++) {
@@ -101,11 +101,11 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 
 	#pragma omp parallel shared(next1, next2, rank1, rank2, next, n)
 	{
-		#pragma omp for
-		for (i = 0; i < n; i++) {
+		#pragma omp for schedule(static)
+		for (size_t i = 0; i < n; i++) {
 		rank1[i] = 1;
 		//rank2[i] = 1;
-		next1[i] = next[i];
+		//next1[i] = next[i];
 		//next2[i] = next[i];
 		}
 
@@ -113,11 +113,12 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		{
 
 			// Perform jump loop of ceiling Log2(n) iterations
-			/* updateRanks(rank1, rank2, next, n);
-			jumpList(next, next1, n); */
+			updateRanks(rank1, rank2, next, n);
+			jumpList((long*)next, next1, n);
+			swap(&rank1, &rank2);
 
 			int log2n = ceil(log2(n));
-			for (i = 1; i <= log2n; i++)
+			for (size_t i = 1; i < log2n; i++)
 			{
 				updateRanks(rank1, rank2, next1, n);
 				jumpList(next1, next2, n);
@@ -129,7 +130,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		}
 
 		// Copy the final rank list to the rank array
-		#pragma omp for
+		#pragma omp for schedule(static)
 			for (size_t i = 0; i < n; i++) {
 				rank[i] = n - rank1[i];
 			}
