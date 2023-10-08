@@ -72,7 +72,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			{
 				size_t startIndex = (j-1)*n/(num_sublists-1);
 				size_t endIndex = j*n/(num_sublists-1) - 1;
-				size_t randIndex = startIndex + rand()%(endIndex - startIndex + 1);
+				size_t randIndex = startIndex;
 				if (randIndex == head)
 				{
 					randIndex = endIndex;
