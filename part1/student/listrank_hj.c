@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 void parallelListRanks (long head, const long* next, long* rank, size_t n)
 {
 	//Helman and Jájá’s list ranking algorithm
@@ -47,6 +46,8 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			}
 			rank1[i] = 1;
 		}
+		
+	
 
 		size_t threadID = omp_get_thread_num();
 		size_t sublistsPerThread = (num_sublists)/num_threads;
@@ -63,7 +64,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		{
 			startSegment += extraSublists;
 			endSegment += extraSublists;
-		}		
+		}
 		
 		for (size_t j = startSegment; j <= endSegment; j++)
 		{
@@ -92,6 +93,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		}
 		#pragma omp barrier
 
+
 		for (size_t j = startSegment; j <= endSegment; j++)
 		{
 			size_t pre = sublist_heads[j];
@@ -119,7 +121,6 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		}
 		#pragma omp barrier
 
-
 		#pragma omp single
 		{
 			sublist_rank[0] = 0;
@@ -130,7 +131,6 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 				sublist_rank[sublist_next[current]] = sublist_rank[current] + sublist_rank[sublist_next[current]];
 				current = sublist_next[current];
 			}
-
 		}
 		
 		size_t recordPerThread = n/num_threads;
@@ -148,13 +148,11 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 			endIndex += extraRecords;
 		}
 
-		#pragma omp for
 		for (size_t j = startIndex; j <= endIndex; j++)
 		{
-			rank1[j] = rank1[j]+sublist_rank[(-1)*next1[j]] - 1;
-			rank[j] = rank1[j];
+			rank[j] = rank1[j]+sublist_rank[(-1)*next1[j]] - 1;
 		}
-
+		#pragma omp barrier
 	}
 	free(sublist_heads);
 	free(sublist_scratch);
