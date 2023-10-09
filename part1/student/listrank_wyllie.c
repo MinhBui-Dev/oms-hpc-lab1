@@ -76,7 +76,7 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 	swap(&rank1, &rank2);
 
 	int log2n = ceil(log2(n));
-	#pragma omp for schedule(static)
+	//#pragma omp for schedule(static)
 	for (size_t i = 1; i < log2n; i++)
 	{
 		updateRanks(rank1, rank2, next1, n);
