@@ -26,6 +26,11 @@ void parallelListRanks (long head, const long* next, long* rank, size_t n)
 		{
 			num_threads = omp_get_num_threads();
 			num_sublists = num_threads*ceil(log2(n));
+			if (num_sublists > n)
+			{
+				num_sublists = 2 * num_threads;
+			}
+			//printf("num_sublists: %ld\n", num_sublists);
 			sublist_heads = malloc((num_sublists)*sizeof(long));
 			sublist_scratch = malloc((num_sublists)*sizeof(long));
 			sublist_next = malloc((num_sublists)*sizeof(long));
