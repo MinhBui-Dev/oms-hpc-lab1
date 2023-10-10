@@ -23,79 +23,6 @@ __global__ void subListRanks(const long head, long* next, long* rank, long* subl
 		
 	}
 	__syncthreads();
-
-	/* if (tid < extra_records)
-	{
-		startRecord += tid;
-		endRecord += tid + 1;
-	}
-	else
-	{
-		startRecord += extra_records;
-		endRecord += extra_records;
-	}
-	printf("tid: %d, startRecord: %d, endRecord: %d\n", tid, startRecord, endRecord);
-
-	__syncthreads();
-
-	for (size_t i = startRecord; i < endRecord; i++)
-	{
-		printf("tid: %d, i: %ld, next[i]: %ld\n", tid, i, next[i]);
-		if (next[i] == -1)
-		{
-			printf("tid: %d, i: %ld, next[i]: %ld\n", tid, i, next[i]);
-			printf("num_sublist: %ld\n", num_sublist);
-			next[i] = -(num_sublist);
-		}
-		rank[i] = 1;
-		printf("tid: %d, i: %ld, next[i]: %ld\n", tid, i, next[i]);
-		
-	}
-
-
-	printf("Out of loop\n");
-	printf("tid: %d, head: %ld\n", tid, head);
-	printf("tid: %d, next[head]: %ld\n", tid, next[head]);
-	__syncthreads(); */
-
-	/* if	(tid == 0)
-	{
-		printf("next: ");
-		for (size_t i = 0; i < n; i++)
-		{
-			printf("%ld ", next[i]);
-		}
-		printf("\n");
-
-	} */
-
-
-	
-
-	/* if	(tid == 0)
-	{
-		printf("sublist_head: ");
-		for (size_t i = 0; i < num_sublist; i++)
-		{
-			printf("%ld ", sublist_head[i]);
-		}
-		printf("\n");
-		printf("sublist_scratch: ");
-		for (size_t i = 0; i < num_sublist; i++)
-		{
-			printf("%ld ", sublist_scratch[i]);
-		}
-		printf("\n");
-		printf("next: ");
-		for (size_t i = 0; i < n; i++)
-		{
-			printf("%ld ", next[i]);
-		}
-		printf("\n");
-
-	} */
-
-
 	
 }
 
@@ -114,7 +41,6 @@ __global__ void selectSplitter(long head, long* next, long* sublist_head, long* 
 		{
 			size_t startIndex = (i - 1) * n/(num_sublist - 1);
 			size_t endIndex = i*n/(num_sublist - 1) - 1;
-			//printf("startIndex: %ld, endIndex: %ld\n", startIndex, endIndex);
 			// choose random pivot
 			size_t pivotIndex = startIndex + (endIndex - startIndex)/2;
 			if (pivotIndex == head)
@@ -122,10 +48,6 @@ __global__ void selectSplitter(long head, long* next, long* sublist_head, long* 
 				pivotIndex = endIndex;
 			} else if (next[pivotIndex] < 0)
 			{
-				/* printf("pivotIndex: %ld\n", pivotIndex);
-				printf("next[pivotIndex]: %ld\n", next[pivotIndex]);
-				printf("head: %ld\n", head);
-				printf("startIndex: %ld, endIndex: %ld\n", startIndex, endIndex); */
 				pivotIndex = endIndex;
 			}
 			
@@ -205,32 +127,15 @@ extern "C" void parallelListRanks(const long head, const long* next, long* rank,
 	cudaMalloc(&d_rank, n * sizeof(long));
 	cudaMemcpy(d_next, next, n * sizeof(long), cudaMemcpyHostToDevice);
 
-	//size_t sublistPerThread = 4;
 
 	size_t threadsPerBlock = 1024;
 	size_t blocksPerGrid =  (n + threadsPerBlock - 1) / threadsPerBlock;
 	size_t num_sublists = blocksPerGrid * log2(n);
 
-	/* if (num_sublists > threadsPerBlock)
-	{
-		num_sublists = threadsPerBlock;
-	} */
-	
-
-
-	//size_t threadsPerBlock = 64;
-	//size_t blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
-	//size_t subListPerThread = 32;
-	//size_t total_threads = threadsPerBlock * blocksPerGrid;
-	//size_t num_sublists = total_threads * log2(n);
-	//size_t num_sublists = threadsPerBlock * blocksPerGrid * subListPerThread;
-
 	if (num_sublists > n)
 	{
 		num_sublists = n/log2(n);
 	}
-
-	//printf("num_sublists: %ld\n", num_sublists);
 
 	long* d_sublist_next, *d_sublist_rank, *d_sublist_head, *d_sublist_scratch;
 	cudaMalloc(&d_sublist_next, num_sublists * sizeof(long));
@@ -258,20 +163,6 @@ extern "C" void parallelListRanks(const long head, const long* next, long* rank,
 	cudaMemcpy(sublist_rank, d_sublist_rank, num_sublists * sizeof(long), cudaMemcpyDeviceToHost);
 	cudaMemcpy(sublist_next, d_sublist_next, num_sublists * sizeof(long), cudaMemcpyDeviceToHost);
 
-	
-	/* printf("sublist_rank: ");
-	for (size_t i = 0; i < num_sublists; i++)
-	{
-		printf("%ld ", sublist_rank[i]);
-	}
-	printf("\n"); */
-
-	/* printf("sublist_next: ");
-	for (size_t i = 0; i < num_sublists; i++)
-	{
-		printf("%ld ", sublist_next[i]);
-	}
-	printf("\n"); */
 
 	sublist_rank[0] = 0;
 	size_t current = sublist_next[0];
@@ -281,8 +172,6 @@ extern "C" void parallelListRanks(const long head, const long* next, long* rank,
 		sublist_rank[sublist_next[current]] = sublist_rank[current] + sublist_rank[sublist_next[current]];
 		current = sublist_next[current];
 	}
-
-	//printf("I am here\n");
 
 	cudaMemcpy(d_sublist_rank, sublist_rank, num_sublists * sizeof(long), cudaMemcpyHostToDevice);
 
